@@ -169,26 +169,21 @@ def train_net(net,
                     train_md_loss += images.shape[0] * md_loss.item()
                     train_psd_loss += images.shape[0] * psd_loss.item()
 
-                pbar.update(images.shape[0])
-                global_step += 1
-                epoch_loss += loss.item()
-                experiment.log({
-                    'comp train loss': loss.item(),
-                    'train_td_loss': td_loss.item(),
-                    'train_pd_loss': pd_loss.item(),
-                    'train_md_loss': md_loss.item(),
-                    'train_psd_loss': psd_loss.item(),
-                    'step': global_step,
-                    'epoch': epoch
-                })
-
                 optimizer.zero_grad(set_to_none=True)
                 grad_scaler.scale(loss).backward()
                 grad_scaler.step(optimizer)
                 grad_scaler.update()
 
-                pbar.set_postfix(**{'loss (batch)': loss.item()})
+                pbar.update(images.shape[0])
+                global_step += 1
+                epoch_loss += loss.item()
+                experiment.log({
+                    'comp_train_loss': loss.item(),
+                    'step': global_step,
+                    'epoch': epoch
+                })
 
+                pbar.set_postfix(**{'loss (batch)': loss.item()})
 
             cum_td_loss = 0.0
             cum_pd_loss = 0.0
@@ -210,16 +205,14 @@ def train_net(net,
                 with torch.no_grad():
                     masks_pred = net(images)
                     td_loss, pd_loss, md_loss, psd_loss = criterion(masks_pred, true_masks, sep=True)
+                    loss = (1 - args.mean_wt) * (td_loss + pd_loss) + args.mean_wt * (md_loss + psd_loss)
                     cum_td_loss += images.shape[0] * td_loss.item()
                     cum_pd_loss += images.shape[0] * pd_loss.item()
                     cum_md_loss += images.shape[0] * md_loss.item()
                     cum_psd_loss += images.shape[0] * psd_loss.item()
 
                 experiment.log({
-                    'val_td_loss': td_loss.item(),
-                    'val_pd_loss': pd_loss.item(),
-                    'val_md_loss': md_loss.item(),
-                    'val_psd_loss': psd_loss.item(),
+                    'comp_val_loss': loss.item(),
                     'step': val_step,
                     'epoch': epoch
                 })
@@ -232,6 +225,18 @@ def train_net(net,
                                                                     train_md_loss / n_train, train_psd_loss / n_train,
                                                                     cum_td_loss / n_val, cum_pd_loss / n_val,
                                                                     cum_md_loss / n_val, cum_psd_loss / n_val))
+        experiment.log({
+            'train_td_loss': train_td_loss / n_train,
+            'train_pd_loss': train_pd_loss / n_train,
+            'train_md_loss': train_md_loss / n_train,
+            'train_psd_loss': train_psd_loss / n_train,
+            'val_td_loss': cum_td_loss / n_val,
+            'val_pd_loss': cum_pd_loss / n_val,
+            'val_md_loss': cum_md_loss / n_val,
+            'val_psd_loss': cum_psd_loss / n_val,
+            'epoch': epoch
+        })
+
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
