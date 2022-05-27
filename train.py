@@ -169,11 +169,6 @@ def train_net(net,
                     train_md_loss += images.shape[0] * md_loss.item()
                     train_psd_loss += images.shape[0] * psd_loss.item()
 
-                optimizer.zero_grad(set_to_none=True)
-                grad_scaler.scale(loss).backward()
-                grad_scaler.step(optimizer)
-                grad_scaler.update()
-
                 pbar.update(images.shape[0])
                 global_step += 1
                 epoch_loss += loss.item()
@@ -186,7 +181,14 @@ def train_net(net,
                     'step': global_step,
                     'epoch': epoch
                 })
+
+                optimizer.zero_grad(set_to_none=True)
+                grad_scaler.scale(loss).backward()
+                grad_scaler.step(optimizer)
+                grad_scaler.update()
+
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
+
 
             cum_td_loss = 0.0
             cum_pd_loss = 0.0
