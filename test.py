@@ -48,16 +48,14 @@ def test_net(net,
 
     # 2. Split into train / validation partitions
     n_test = len(test_data)
-    # train_set, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(0))
 
     # 3. Create data loaders
     test_dl = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=2)
 
     # (Initialize logging)
     experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
-    experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
-                                  val_percent=val_percent, save_checkpoint=save_checkpoint, img_scale=img_scale,
-                                  amp=amp))
+    experiment.config.update(dict(batch_size=batch_size, val_percent=val_percent, save_checkpoint=save_checkpoint,
+                                  img_scale=img_scale, amp=amp))
 
     logging.info(f'''Starting training:
         Batch size:      {batch_size}
