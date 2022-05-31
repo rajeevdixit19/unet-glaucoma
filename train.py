@@ -65,7 +65,6 @@ def train_net(net,
 
     train_df = pd.read_csv('/data/updated_csv_0331_80_10_10/train_non_myopic.csv')
     val_df = pd.read_csv('/data/updated_csv_0331_80_10_10/val_non_myopic.csv')
-    test_df = pd.read_csv('/data/updated_csv_0331_80_10_10/test_non_myopic.csv')
 
     mean = [0.21159853, 0.21159853, 0.21159853]
     std = [0.00929382, 0.00929525, 0.00929995]
@@ -74,7 +73,7 @@ def train_net(net,
         #     transforms.Resize(256),
         transforms.RandomCrop(256),
         transforms.RandomRotation(5),
-        transforms.Resize(300),
+        transforms.Resize(200),
         transforms.ToTensor(),
         transforms.Normalize(mean, std),
     ])
@@ -82,7 +81,7 @@ def train_net(net,
     transform = transforms.Compose([
         #     transforms.Resize(256),
         transforms.CenterCrop(256),
-        transforms.Resize(300),
+        transforms.Resize(200),
         transforms.ToTensor(),
         transforms.Normalize(mean, std),
     ])
@@ -93,17 +92,14 @@ def train_net(net,
 
     train_data = OCTADataset(train_df, img_dir, transform=train_transform)
     val_data = OCTADataset(val_df, img_dir, transform=transform)
-    test_data = OCTADataset(test_df, img_dir, transform=transform)
 
     # 2. Split into train / validation partitions
     n_val = len(val_data)
     n_train = len(train_data)
-    # train_set, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(0))
 
     # 3. Create data loaders
     train_dl = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
     val_dl = DataLoader(val_data, batch_size=batch_size, shuffle=True, num_workers=2)
-    test_dl = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=2)
 
     # (Initialize logging)
     experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
@@ -130,6 +126,7 @@ def train_net(net,
     criterion = loss_fn
     global_step = 0
     val_step = 0
+    best_val_loss = 1e12
 
     # 5. Begin training
     for epoch in range(1, epochs+1):
@@ -140,11 +137,6 @@ def train_net(net,
         train_pd_loss = 0.0
         train_md_loss = 0.0
         train_psd_loss = 0.0
-
-        cum_td_loss = 0.0
-        cum_pd_loss = 0.0
-        cum_md_loss = 0.0
-        cum_psd_loss = 0.0
 
         with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
 
@@ -189,6 +181,7 @@ def train_net(net,
             cum_pd_loss = 0.0
             cum_md_loss = 0.0
             cum_psd_loss = 0.0
+            cum_comp_loss = 0.0
 
             for batch in val_dl:
                 images = batch[0]
@@ -210,6 +203,7 @@ def train_net(net,
                     cum_pd_loss += images.shape[0] * pd_loss.item()
                     cum_md_loss += images.shape[0] * md_loss.item()
                     cum_psd_loss += images.shape[0] * psd_loss.item()
+                    cum_comp_loss += images.shape[0] * loss.item()
 
                 experiment.log({
                     'comp_val_loss': loss.item(),
@@ -236,12 +230,16 @@ def train_net(net,
             'val_psd_loss': cum_psd_loss / n_val,
             'epoch': epoch
         })
-
+        cum_comp_loss = cum_comp_loss / len(n_val)
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
             torch.save(net.state_dict(), str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch)))
             logging.info(f'Checkpoint {epoch} saved!')
+
+        if cum_comp_loss < best_val_loss:
+            torch.save(net.state_dict(), str(dir_checkpoint / 'checkpoint_best.pth'))
+            logging.info(f'Best checkpoint saved at epoch {epoch}')
 
 
 def get_args():
