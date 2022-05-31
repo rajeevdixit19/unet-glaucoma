@@ -230,7 +230,7 @@ def train_net(net,
             'val_psd_loss': cum_psd_loss / n_val,
             'epoch': epoch
         })
-        cum_comp_loss = cum_comp_loss / len(n_val)
+        cum_comp_loss = cum_comp_loss / n_val
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
