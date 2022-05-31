@@ -103,15 +103,8 @@ def test_net(net,
 
         val_step += 1
 
-        print("Test td_loss: {} pd loss: {} md-10 loss: {} psd-10 loss: {}".format(cum_td_loss / n_test, cum_pd_loss / n_test,
-                                                                                   cum_md_loss / n_test, cum_psd_loss / n_test))
-        experiment.log({
-            'val_td_loss': cum_td_loss / n_test,
-            'val_pd_loss': cum_pd_loss / n_test,
-            'val_md_loss': cum_md_loss / n_test,
-            'val_psd_loss': cum_psd_loss / n_test,
-        })
-
+    print("Test td_loss: {} pd loss: {} md-10 loss: {} psd-10 loss: {}".format(cum_td_loss / n_test, cum_pd_loss / n_test,
+                                                                             cum_md_loss / n_test, cum_psd_loss / n_test))
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
