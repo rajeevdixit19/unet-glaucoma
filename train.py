@@ -238,6 +238,7 @@ def train_net(net,
             logging.info(f'Checkpoint {epoch} saved!')
 
         if cum_comp_loss < best_val_loss:
+            best_val_loss = cum_comp_loss
             torch.save(net.state_dict(), str(dir_checkpoint / 'checkpoint_best.pth'))
             logging.info(f'Best checkpoint saved at epoch {epoch}')
 
