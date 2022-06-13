@@ -26,17 +26,22 @@ dir_checkpoint = Path('./checkpoints/')
 
 
 def loss_fn(pred, true, sep=False):
-    pred_td = torch.cat([pred[:, 0, 0, 4:6], pred[:, 0, 1, 2:8], pred[:, 0, 2, 1:9],
-                         pred[:, 0, 3, 1:9], pred[:, 0, 4, :], pred[:, 0, 5, :],
-                         pred[:, 0, 6, 1:9], pred[:, 0, 7, 1:9], pred[:, 0, 8, 2:8],
-                         pred[:, 0, 9, 4:6]], 1)
-    pred_pd = torch.cat([pred[:, 1, 0, 4:6], pred[:, 1, 1, 2:8], pred[:, 1, 2, 1:9],
-                         pred[:, 1, 3, 1:9], pred[:, 1, 4, :], pred[:, 1, 5, :],
-                         pred[:, 1, 6, 1:9], pred[:, 1, 7, 1:9], pred[:, 1, 8, 2:8],
-                         pred[:, 1, 9, 4:6]], 1)
+    # pred_td = torch.cat([pred[:, 0, 0, 4:6], pred[:, 0, 1, 2:8], pred[:, 0, 2, 1:9],
+    #                      pred[:, 0, 3, 1:9], pred[:, 0, 4, :], pred[:, 0, 5, :],
+    #                      pred[:, 0, 6, 1:9], pred[:, 0, 7, 1:9], pred[:, 0, 8, 2:8],
+    #                      pred[:, 0, 9, 4:6]], 1)
+    # pred_pd = torch.cat([pred[:, 1, 0, 4:6], pred[:, 1, 1, 2:8], pred[:, 1, 2, 1:9],
+    #                      pred[:, 1, 3, 1:9], pred[:, 1, 4, :], pred[:, 1, 5, :],
+    #                      pred[:, 1, 6, 1:9], pred[:, 1, 7, 1:9], pred[:, 1, 8, 2:8],
+    #                      pred[:, 1, 9, 4:6]], 1)
+    #
+    # pred_md = torch.mean(pred_td, 1)
+    # pred_psd = torch.mean(pred_pd, 1)
 
-    pred_md = torch.mean(pred_td, 1)
-    pred_psd = torch.mean(pred_pd, 1)
+    pred_td = pred[:, 0:68]
+    pred_pd = pred[:, 68:136]
+    pred_md = pred[:, 136]
+    pred_psd = pred[:, 137]
 
     true_td = true[:, 0:68]
     true_pd = true[:, 68:136]
@@ -264,7 +269,7 @@ def get_args():
 
 
 def modify_net(net):
-    net.outc = unet.unet_parts.OutConvOurs(64, args.classes)
+    net.outc = unet.unet_parts.OutConvOurs(64, args.classes, 200)
 
 
 if __name__ == '__main__':

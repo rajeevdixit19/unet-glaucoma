@@ -78,10 +78,12 @@ class OutConv(nn.Module):
 
 
 class OutConvOurs(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, im_size):
         super(OutConvOurs, self).__init__()
+        self.in_ch = in_channels
+        self.im_size = im_size
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-        self.pool = nn.AvgPool2d(20)
+        self.fc = nn.Linear(in_channels * im_size * im_size, 138)
 
     def forward(self, x):
-        return self.pool(self.conv(x))
+        return self.fc(self.conv(x).view(-1, self.in_ch * self.im_size * self.im_size))
