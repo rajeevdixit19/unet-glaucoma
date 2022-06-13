@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 import torchvision.transforms as transforms
 
+import unet.unet_parts
 from utils.data_loading import OCTADataset
 from utils.dice_score import dice_loss
 from evaluate import evaluate
@@ -262,6 +263,10 @@ def get_args():
     return parser.parse_args()
 
 
+def modify_net(net):
+    net.outc = unet.unet_parts.OutConvOurs(64, args.classes)
+
+
 if __name__ == '__main__':
     args = get_args()
 
@@ -272,7 +277,9 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = UNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
+    # net = UNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
+    net = torch.hub.load('milesial/Pytorch-UNet', 'unet_carvana', pretrained=True, scale=0.5)
+    modify_net(net)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
