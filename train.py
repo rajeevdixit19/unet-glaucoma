@@ -25,19 +25,7 @@ dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
 
-def loss_fn(pred, true, sep=False):
-    pred_td = torch.cat([pred[:, 0, 0, 4:6], pred[:, 0, 1, 2:8], pred[:, 0, 2, 1:9],
-                         pred[:, 0, 3, 1:9], pred[:, 0, 4, :], pred[:, 0, 5, :],
-                         pred[:, 0, 6, 1:9], pred[:, 0, 7, 1:9], pred[:, 0, 8, 2:8],
-                         pred[:, 0, 9, 4:6]], 1)
-    pred_pd = torch.cat([pred[:, 1, 0, 4:6], pred[:, 1, 1, 2:8], pred[:, 1, 2, 1:9],
-                         pred[:, 1, 3, 1:9], pred[:, 1, 4, :], pred[:, 1, 5, :],
-                         pred[:, 1, 6, 1:9], pred[:, 1, 7, 1:9], pred[:, 1, 8, 2:8],
-                         pred[:, 1, 9, 4:6]], 1)
-
-    pred_md = torch.mean(pred_td, 1)
-    pred_psd = torch.mean(pred_pd, 1)
-
+def loss_fn(pred_td, pred_pd, pred_md, pred_psd, true, sep=False):
     true_td = true[:, 0:68]
     true_pd = true[:, 68:136]
     true_md = true[:, 136]
@@ -154,8 +142,9 @@ def train_net(net,
                 true_masks = true_masks.to(device=device, dtype=torch.long)
 
                 with torch.cuda.amp.autocast(enabled=amp):
-                    masks_pred = net(images)
-                    td_loss, pd_loss, md_loss, psd_loss = criterion(masks_pred, true_masks, sep=True)
+                    masks_td, mask_pd, md_pred, psd_pred = net(images)
+                    td_loss, pd_loss, md_loss, psd_loss = criterion(masks_td, mask_pd, md_pred, psd_pred, true_masks,
+                                                                    sep=True)
                     loss = (1 - args.mean_wt) * (td_loss + pd_loss) + args.mean_wt * (md_loss + psd_loss)
                     train_td_loss += images.shape[0] * td_loss.item()
                     train_pd_loss += images.shape[0] * pd_loss.item()
@@ -197,8 +186,9 @@ def train_net(net,
                 true_masks = true_masks.to(device=device, dtype=torch.long)
 
                 with torch.no_grad():
-                    masks_pred = net(images)
-                    td_loss, pd_loss, md_loss, psd_loss = criterion(masks_pred, true_masks, sep=True)
+                    masks_td, mask_pd, md_pred, psd_pred = net(images)
+                    td_loss, pd_loss, md_loss, psd_loss = criterion(masks_td, mask_pd, md_pred, psd_pred, true_masks,
+                                                                    sep=True)
                     loss = (1 - args.mean_wt) * (td_loss + pd_loss) + args.mean_wt * (md_loss + psd_loss)
                     cum_td_loss += images.shape[0] * td_loss.item()
                     cum_pd_loss += images.shape[0] * pd_loss.item()

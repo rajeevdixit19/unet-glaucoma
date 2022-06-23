@@ -88,8 +88,9 @@ def test_net(net,
         true_masks = true_masks.to(device=device, dtype=torch.long)
 
         with torch.no_grad():
-            masks_pred = net(images)
-            td_loss, pd_loss, md_loss, psd_loss = criterion(masks_pred, true_masks, sep=True)
+            masks_td, mask_pd, md_pred, psd_pred = net(images)
+            td_loss, pd_loss, md_loss, psd_loss = criterion(masks_td, mask_pd, md_pred, psd_pred, true_masks,
+                                                            sep=True)
             loss = (1 - args.mean_wt) * (td_loss + pd_loss) + args.mean_wt * (md_loss + psd_loss)
             cum_td_loss += images.shape[0] * td_loss.item()
             cum_pd_loss += images.shape[0] * pd_loss.item()

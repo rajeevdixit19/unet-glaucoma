@@ -82,6 +82,20 @@ class OutConvOurs(nn.Module):
         super(OutConvOurs, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         self.pool = nn.AvgPool2d(20)
+        self.fc1 = nn.Linear(68, 1)
+        self.fc2 = nn.Linear(68, 1)
 
     def forward(self, x):
-        return self.pool(self.conv(x))
+        pred = self.pool(self.conv(x))
+
+        pred_td = torch.cat([pred[:, 0, 0, 4:6], pred[:, 0, 1, 2:8], pred[:, 0, 2, 1:9],
+                             pred[:, 0, 3, 1:9], pred[:, 0, 4, :], pred[:, 0, 5, :],
+                             pred[:, 0, 6, 1:9], pred[:, 0, 7, 1:9], pred[:, 0, 8, 2:8],
+                             pred[:, 0, 9, 4:6]], 1)
+
+        pred_pd = torch.cat([pred[:, 1, 0, 4:6], pred[:, 1, 1, 2:8], pred[:, 1, 2, 1:9],
+                             pred[:, 1, 3, 1:9], pred[:, 1, 4, :], pred[:, 1, 5, :],
+                             pred[:, 1, 6, 1:9], pred[:, 1, 7, 1:9], pred[:, 1, 8, 2:8],
+                             pred[:, 1, 9, 4:6]], 1)
+
+        return pred_td, pred_pd, self.fc1(pred_td), self.fc2(pred_pd)
