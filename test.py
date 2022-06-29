@@ -8,6 +8,7 @@ import wandb
 from torch.utils.data import DataLoader, random_split
 import torchvision.transforms as transforms
 
+import unet
 from utils.data_loading import OCTADataset
 from unet import UNet
 from train import loss_fn
@@ -137,6 +138,7 @@ if __name__ == '__main__':
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
     net = UNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
+    net.outc = unet.unet_parts.OutConvOurs(64, args.classes)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
